@@ -50,11 +50,11 @@ def initialize_wandb(args: Namespace) -> None:
     args.wandb_url = wandb.run.get_url()
 
 
-def _to_device(name: str, x, device):
+def _to_device(name: str, x, device, non_blocking: bool = False):
     if isinstance(x, torch.Tensor):
         if 'label' in name.lower() or 'target' in name.lower():
-            return x.to(device, dtype=torch.long)
-        return x.to(device)
+            return x.to(device, dtype=torch.long, non_blocking=non_blocking)
+        return x.to(device, non_blocking=non_blocking)
     return x
 
 def train_single_epoch(model: ContinualModel,
@@ -97,11 +97,13 @@ def train_single_epoch(model: ContinualModel,
             break
 
         inputs, labels, not_aug_inputs = data[0], data[1], data[2]
-        inputs, labels = inputs.to(model.device), labels.to(model.device, dtype=torch.long)
-        not_aug_inputs = not_aug_inputs.to(model.device)
+        # Fast I/O: use non_blocking for async CPU→GPU transfer when enabled
+        _nb = getattr(args, 'fast_io', False)
+        inputs, labels = inputs.to(model.device, non_blocking=_nb), labels.to(model.device, dtype=torch.long, non_blocking=_nb)
+        not_aug_inputs = not_aug_inputs.to(model.device, non_blocking=_nb)
 
         extra_fields = {
-            train_loader.dataset.extra_return_fields[k]: _to_device(train_loader.dataset.extra_return_fields[k], data[3 + k], model.device)
+            train_loader.dataset.extra_return_fields[k]: _to_device(train_loader.dataset.extra_return_fields[k], data[3 + k], model.device, non_blocking=_nb)
             for k in range(len(data) - 3)
         }
 

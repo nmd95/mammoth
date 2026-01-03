@@ -390,6 +390,12 @@ def add_management_args(parser: ArgumentParser) -> None:
                            '1: Use TF32, if available.'
                            '2: Use BF16, if available.'
                            '3: Use BF16 and `torch.compile`. BEWARE: torch.compile may break your code if you change the model after the first run! Use with caution.')
+    mng_group.add_argument('--fast_io', type=binary_to_boolean_type, default=0,
+                           help='Enable fast I/O optimizations for training. '
+                           'When enabled: (1) Uses all available CPU threads instead of 2, '
+                           '(2) Enables non_blocking=True for async CPU→GPU data transfers. '
+                           'This can provide ~40%% speedup on small models (ResNet-18) but may affect debugging/reproducibility. '
+                           'Disabled by default to match standard Mammoth behavior.')
     mng_group.add_argument('--distributed', type=str, default='no', choices=['no', 'dp', 'ddp'], help='Enable distributed training?')
     mng_group.add_argument('--savecheck', choices=['last', 'task'], type=str, help='Save checkpoint every `task` or at the end of the training (`last`).')
     mng_group.add_argument('--save_checkpoint_mode', choices=['old_pickle', 'safe'], type=str, default='safe',

@@ -34,6 +34,28 @@ def warn_once(*msg):
         logging.warning(msg)
 
 
+def apply_fast_io_optimizations(args) -> bool:
+    """
+    Applies fast I/O optimizations if --fast_io is enabled.
+    
+    When enabled:
+    - Increases CPU threads from default 2 to all available cores
+    - Sets a flag for non_blocking data transfers (handled in training.py)
+    
+    Args:
+        args: the parsed command line arguments
+        
+    Returns:
+        True if optimizations were applied, False otherwise
+    """
+    if getattr(args, 'fast_io', False):
+        n_cpus = len(os.sched_getaffinity(0)) if hasattr(os, 'sched_getaffinity') else (os.cpu_count() or 4)
+        torch.set_num_threads(n_cpus)
+        logging.info(f"Fast I/O enabled: Using {n_cpus} CPU threads (default: 2)")
+        return True
+    return False
+
+
 def _get_gpu_memory_pynvml_all_processes(device_id: int = 0) -> int:
     """
     Use pynvml to get the memory allocated on the GPU.

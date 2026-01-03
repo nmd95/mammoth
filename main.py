@@ -488,6 +488,10 @@ def initialize(
             if not torch.cuda.is_bf16_supported():
                 raise NotImplementedError('BF16 is not supported on this machine.')
 
+    # Fast I/O optimizations: increase CPU threads for data loading
+    from utils.conf import apply_fast_io_optimizations
+    apply_fast_io_optimizations(args)
+
     dataset = get_dataset(args)
 
     extend_args(args, dataset)
